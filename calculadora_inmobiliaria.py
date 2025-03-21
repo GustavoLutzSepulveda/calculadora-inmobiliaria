@@ -3,6 +3,31 @@ import plotly.graph_objects as go
 import numpy as np
 import pandas as pd
 
+# Después de las importaciones
+VALOR_UF = 38899.12  # Valor UF al día de hoy
+
+def convertir_uf_a_pesos(valor_uf):
+    return valor_uf * VALOR_UF
+
+def convertir_pesos_a_uf(valor_pesos):
+    return valor_pesos / VALOR_UF
+
+def calcular_proyeccion_valor_con_uf(valor_inicial_pesos, tasa_plusvalia, tasa_uf, años):
+    valores_pesos = []
+    valores_uf = []
+    valor_actual_pesos = valor_inicial_pesos
+    valor_actual_uf = convertir_pesos_a_uf(valor_inicial_pesos)
+    
+    for año in range(años + 1):
+        valores_pesos.append(valor_actual_pesos)
+        valores_uf.append(valor_actual_uf)
+        
+        # Actualizar valores para el siguiente año
+        valor_actual_pesos *= (1 + tasa_plusvalia/100) * (1 + tasa_uf/100)
+        valor_actual_uf *= (1 + tasa_plusvalia/100)
+    
+    return valores_pesos, valores_uf
+
 def calcular_cuota_credito(monto, tasa_anual, plazo_anos):
     tasa_mensual = tasa_anual / 12 / 100
     num_pagos = plazo_anos * 12
@@ -65,6 +90,13 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
+# Después del título y antes del sidebar
+st.markdown(f"""
+<div style='background-color: #0E1117; padding: 10px; border-radius: 5px; margin-bottom: 20px; border: 1px solid #FF4B4B;'>
+    <h4 style='text-align: center; margin: 0; color: #FFFFFF;'>Valor UF Actual: <span style='color: #FF4B4B'>${VALOR_UF:,.2f}</span></h4>
+</div>
+""", unsafe_allow_html=True)
+
 # Descripción
 st.markdown("""
 Esta calculadora te ayudará a analizar la rentabilidad de tu inversión inmobiliaria,
@@ -72,26 +104,80 @@ comparando las opciones de compra y arriendo.
 """)
 
 # Sidebar para inputs
-st.sidebar.header("Parámetros de Inversión")
+st.sidebar.header("Configuración")
+usar_uf = st.sidebar.toggle("Mostrar valores en UF", value=False)
 
-# Inputs para el crédito
+# En el sidebar, al inicio
+st.sidebar.header("Parámetros de Inversión")
 st.sidebar.subheader("Datos del Crédito")
-valor_propiedad = st.sidebar.number_input("Valor de la Propiedad ($)", min_value=0, value=50000000, format="%d")
+
+if usar_uf:
+    valor_propiedad_uf = st.sidebar.number_input("Valor de la Propiedad (UF)", 
+                                                min_value=0.0, 
+                                                value=1285.0,  # Aproximadamente 50M en UF
+                                                format="%.2f")
+    valor_propiedad = convertir_uf_a_pesos(valor_propiedad_uf)
+else:
+    valor_propiedad = st.sidebar.number_input("Valor de la Propiedad ($)", 
+                                            min_value=0, 
+                                            value=50000000, 
+                                            format="%d")
+
+# Agregar inputs del crédito
 pie = st.sidebar.number_input("Pie (%)", min_value=0, max_value=100, value=20)
 tasa_anual = st.sidebar.number_input("Tasa de Interés Anual (%)", min_value=0.0, value=5.5)
 plazo_anos = st.sidebar.number_input("Plazo del Crédito (años)", min_value=1, value=30)
 
+if usar_uf:
+    renta_mensual_uf = st.sidebar.number_input("Renta Mensual (UF)", 
+                                              min_value=0.0, 
+                                              value=7.71,  # Aproximadamente 300k en UF
+                                              format="%.2f")
+    renta_mensual = convertir_uf_a_pesos(renta_mensual_uf)
+    
+    gastos_comunes_uf = st.sidebar.number_input("Gastos Comunes Mensuales (UF)", 
+                                               min_value=0.0, 
+                                               value=1.29,  # Aproximadamente 50k en UF
+                                               format="%.2f")
+    gastos_comunes = convertir_uf_a_pesos(gastos_comunes_uf)
+    
+    seguro_arriendo_uf = st.sidebar.number_input("Seguro de Arriendo Mensual (UF)", 
+                                                min_value=0.0, 
+                                                value=0.39,  # Aproximadamente 15k en UF
+                                                format="%.2f")
+    seguro_arriendo = convertir_uf_a_pesos(seguro_arriendo_uf)
+    
+    mantencion_mensual_uf = st.sidebar.number_input("Mantención Mensual (UF)", 
+                                                   min_value=0.0, 
+                                                   value=0.77,  # Aproximadamente 30k en UF
+                                                   format="%.2f")
+    mantencion_mensual = convertir_uf_a_pesos(mantencion_mensual_uf)
+else:
+    renta_mensual = st.sidebar.number_input("Renta Mensual ($)", 
+                                          min_value=0, 
+                                          value=300000, 
+                                          format="%d")
+    gastos_comunes = st.sidebar.number_input("Gastos Comunes Mensuales ($)", 
+                                           min_value=0, 
+                                           value=50000, 
+                                           format="%d")
+    seguro_arriendo = st.sidebar.number_input("Seguro de Arriendo Mensual ($)", 
+                                            min_value=0, 
+                                            value=15000, 
+                                            format="%d")
+    mantencion_mensual = st.sidebar.number_input("Mantención Mensual ($)", 
+                                               min_value=0, 
+                                               value=30000, 
+                                               format="%d")
+
 # Inputs para el arriendo y gastos
 st.sidebar.subheader("Datos del Arriendo y Gastos")
-renta_mensual = st.sidebar.number_input("Renta Mensual ($)", min_value=0, value=300000, format="%d")
-gastos_comunes = st.sidebar.number_input("Gastos Comunes Mensuales ($)", min_value=0, value=50000, format="%d")
-seguro_arriendo = st.sidebar.number_input("Seguro de Arriendo Mensual ($)", min_value=0, value=15000, format="%d")
-mantencion_mensual = st.sidebar.number_input("Mantención Mensual ($)", min_value=0, value=30000, format="%d")
 ocupacion = st.sidebar.slider("Porcentaje de Ocupación (%)", min_value=0, max_value=100, value=95)
 
 # Inputs para proyección
 st.sidebar.subheader("Proyección Futura")
 tasa_plusvalia = st.sidebar.number_input("Tasa de Plusvalía Anual (%)", min_value=0.0, value=3.0)
+tasa_uf = st.sidebar.number_input("Tasa de Crecimiento UF Anual (%)", min_value=0.0, value=3.0)
 años_proyeccion = st.sidebar.number_input("Años de Proyección", min_value=1, value=10)
 
 # Cálculos
@@ -104,8 +190,9 @@ cap_rate_bruto = calcular_cap_rate_bruto(valor_propiedad, renta_mensual)
 cap_rate_neto = calcular_cap_rate_neto(valor_propiedad, renta_mensual, ocupacion)
 
 # Proyección de valores
-valores_proyectados = calcular_proyeccion_valor(valor_propiedad, tasa_plusvalia, años_proyeccion)
-valor_final = valores_proyectados[-1]
+valores_proyectados_pesos, valores_proyectados_uf = calcular_proyeccion_valor_con_uf(
+    valor_propiedad, tasa_plusvalia, tasa_uf, años_proyeccion
+)
 
 # Cálculos de flujo de caja
 flujo_mensual, flujo_anual = calcular_flujo_caja(
@@ -234,33 +321,58 @@ with col5:
     # Gráfico de proyección
     años = list(range(años_proyeccion + 1))
     fig_proyeccion = go.Figure()
+    
+    if usar_uf:
+        valores_mostrar = valores_proyectados_uf
+        unidad = "UF"
+    else:
+        valores_mostrar = valores_proyectados_pesos
+        unidad = "$"
+    
     fig_proyeccion.add_trace(go.Scatter(
         x=años,
-        y=valores_proyectados,
+        y=valores_mostrar,
         mode='lines+markers',
         name='Valor Proyectado'
     ))
     fig_proyeccion.update_layout(
-        title='Proyección del Valor de la Propiedad',
+        title=f'Proyección del Valor de la Propiedad ({unidad})',
         xaxis_title='Años',
-        yaxis_title='Valor ($)',
+        yaxis_title=f'Valor ({unidad})',
         showlegend=True
     )
     st.plotly_chart(fig_proyeccion, use_container_width=True)
 
 with col6:
     # Métricas de proyección
-    st.metric("Valor Inicial", f"${valor_propiedad:,.0f}")
-    st.metric("Valor Proyectado", f"${valor_final:,.0f}")
-    st.metric("Plusvalía Total", f"${valor_final - valor_propiedad:,.0f}")
-    st.metric("Plusvalía Porcentual", f"{((valor_final/valor_propiedad - 1) * 100):.2f}%")
+    if usar_uf:
+        valor_inicial_mostrar = valores_proyectados_uf[0]
+        valor_final_mostrar = valores_proyectados_uf[-1]
+        unidad = "UF"
+    else:
+        valor_inicial_mostrar = valores_proyectados_pesos[0]
+        valor_final_mostrar = valores_proyectados_pesos[-1]
+        unidad = "$"
+    
+    if unidad == "UF":
+        st.metric("Valor Inicial", f"{valor_inicial_mostrar:,.2f} UF")
+        st.metric("Valor Proyectado", f"{valor_final_mostrar:,.2f} UF")
+        st.metric("Plusvalía Total", f"{valor_final_mostrar - valor_inicial_mostrar:,.2f} UF")
+    else:
+        st.metric("Valor Inicial", f"${valor_inicial_mostrar:,.0f}")
+        st.metric("Valor Proyectado", f"${valor_final_mostrar:,.0f}")
+        st.metric("Plusvalía Total", f"${valor_final_mostrar - valor_inicial_mostrar:,.0f}")
+    
+    st.metric("Plusvalía Porcentual", f"{((valor_final_mostrar/valor_inicial_mostrar - 1) * 100):.2f}%")
     
     # Tabla de proyección anual
     datos_proyeccion = {
         'Año': años,
-        'Valor Proyectado': [f"${valor:,.0f}" for valor in valores_proyectados],
-        'Plusvalía': [f"${valor - valor_propiedad:,.0f}" for valor in valores_proyectados],
-        'Plusvalía %': [f"{((valor/valor_propiedad - 1) * 100):.2f}%" for valor in valores_proyectados]
+        f'Valor Proyectado ({unidad})': [f"{valor:,.2f} UF" if usar_uf else f"${valor:,.0f}" 
+                                        for valor in valores_mostrar],
+        'Plusvalía': [f"{valor - valores_mostrar[0]:,.2f} UF" if usar_uf else f"${valor - valores_mostrar[0]:,.0f}" 
+                      for valor in valores_mostrar],
+        'Plusvalía %': [f"{((valor/valores_mostrar[0] - 1) * 100):.2f}%" for valor in valores_mostrar]
     }
     df_proyeccion = pd.DataFrame(datos_proyeccion)
     st.dataframe(df_proyeccion)
