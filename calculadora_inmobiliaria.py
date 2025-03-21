@@ -57,9 +57,15 @@ st.set_page_config(
     layout="wide"
 )
 
-# Título y descripción
-st.markdown("<h1 style='text-align: center;'>GLUTZ CREATIONS</h1>", unsafe_allow_html=True)
-st.title("Calculadora de Inversión Inmobiliaria")
+# Título con enlace
+st.markdown("""
+<div style='text-align: center;'>
+    <h1><a href='https://www.glutz.cl/portafolio' target='_blank' style='text-decoration: none; color: #FF4B4B;'>GLUTZ CREATIONS</a></h1>
+    <h2>Calculadora de Inversión Inmobiliaria</h2>
+</div>
+""", unsafe_allow_html=True)
+
+# Descripción
 st.markdown("""
 Esta calculadora te ayudará a analizar la rentabilidad de tu inversión inmobiliaria,
 comparando las opciones de compra y arriendo.
@@ -385,3 +391,11 @@ st.markdown("""
 # Agregar mensaje personal
 st.markdown("---")
 st.markdown("<h3 style='text-align: center; color: #FF4B4B;'>❤️ Glutz los quiere mucho, estudien los números ❤️</h3>", unsafe_allow_html=True)
+
+# Al final del archivo, antes de la sección de fórmulas
+st.markdown("---")
+st.markdown("""
+<div style='text-align: center; padding: 20px; color: #666;'>
+    <p>Calculadora creada por <a href='https://www.glutz.cl' target='_blank' style='text-decoration: none; color: #FF4B4B;'>Glutz</a></p>
+</div>
+""", unsafe_allow_html=True)
